@@ -211,6 +211,7 @@ class ModuleBuilder:
             logger.exception("Error generating dump file")
 
     def finalize_construct(self):
+        print(self.module_op)
         try:
             self.module_op.verify()
         except MLIRError as e:
