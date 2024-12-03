@@ -5,12 +5,13 @@
 # See https://llvm.org/LICENSE.txt for license information.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-from typing import Callable, Dict, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple
 
 from dataclasses import dataclass
 from pathlib import Path
 import tempfile
 from itertools import zip_longest
+import weakref
 
 import numpy as np
 import torch
@@ -19,7 +20,7 @@ from iree.compiler.extras.fx_importer import (
     ContextCache,
     Empty,
     EmptyType,
-    RefTracker,
+    # RefTracker,
 )
 
 from ...dynamo.type_conversion import (
@@ -148,6 +149,50 @@ class GlobalAttributes:
             )
 
         return bool(self.external), self.external_scope, None
+
+
+###############################################################################
+# Reference Trackers - ad-hoc solution to the memory leaks
+###############################################################################
+
+
+class RefMapping:
+    __slots__ = [
+        "_referrent",
+        "value",
+        "__weakref__",
+    ]
+
+    def __init__(self, referrent: Any):
+        if referrent is not Empty:
+            self._referrent = weakref.ref(referrent)
+        self.value = Empty
+
+    @property
+    def is_empty(self):
+        return self.value is Empty
+
+    def __repr__(self):
+        return (
+            f"<RefMapping {id(self._referrent) if self._referrent is not Empty else 'empty'} -> "
+            f"{self.value if self.value is not Empty else 'empty'}>"
+        )
+
+
+class RefTracker:
+    """Tracks live references from Python values to symbolic associations."""
+
+    def __init__(self):
+        self._refs: Dict[int, RefMapping] = {}
+
+    def track(self, referrent: Any) -> RefMapping:
+        ref_id = id(referrent)
+        existing = self._refs.get(ref_id)
+        if existing:
+            return existing
+        info = RefMapping(referrent)
+        self._refs[ref_id] = info
+        return info
 
 
 ###############################################################################
