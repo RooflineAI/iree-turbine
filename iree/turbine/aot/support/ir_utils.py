@@ -325,7 +325,7 @@ class ModuleBuilder:
             else:
                 # Emit inline initialized.
                 detached_tensor = t.detach().contiguous().cpu()
-                array = np.array(detached_tensor)
+                array = bytes(detached_tensor.untyped_storage())
                 # We know that a Numpy array is a ReadableBuffer so ignore type error.
                 contents = memoryview(array)  # type: ignore
                 blob_name = symbol_name
