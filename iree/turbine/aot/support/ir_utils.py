@@ -324,12 +324,9 @@ class ModuleBuilder:
                 )
             else:
                 # Emit inline initialized.
-                detached_tensor = t.detach().contiguous().cpu()
-                array = np.array(detached_tensor)
-                # We know that a Numpy array is a ReadableBuffer so ignore type error.
-                contents = memoryview(array)  # type: ignore
+                contents = torch.utils.dlpack.to_dlpack(t)
                 blob_name = symbol_name
-                elements_attr = DenseResourceElementsAttr.get_from_buffer(
+                elements_attr = DenseResourceElementsAttr.get_from_ndarray(
                     contents, blob_name, tensor_type
                 )
                 ir_attrs["initial_value"] = elements_attr
