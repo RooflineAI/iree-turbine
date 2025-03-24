@@ -31,11 +31,16 @@ def extend_aot_decompositions(
     *,
     from_current: bool = True,
     add_ops: Optional[DecompositionOpsList] = None,
-    remove_ops: Optional[DecompositionOpsList] = None
+    remove_ops: Optional[DecompositionOpsList] = None,
+    add_decomps: Optional[DecompositionTable] = None
 ):
     """Context manager which extends the list of decompositions used for AOT."""
     return _extend_context_manager(
-        "aot", from_current=from_current, add_ops=add_ops, remove_ops=remove_ops
+        "aot",
+        from_current=from_current,
+        add_ops=add_ops,
+        remove_ops=remove_ops,
+        add_decomps=add_decomps,
     )
 
 
