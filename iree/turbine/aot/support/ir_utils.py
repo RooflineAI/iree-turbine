@@ -324,7 +324,16 @@ class ModuleBuilder:
                 )
             else:
                 # Emit inline initialized.
-                contents = torch.utils.dlpack.to_dlpack(t)
+                # This is the line orignally used here before copying 
+                # the tensor to a memoryview. We also need to make the tensor 
+                # contiguous here to get the correct strides. We further detach 
+                # the tensor from the current graph. Returned Tensor shares the 
+                # same storage with the original one. We further use .cpu() 
+                # to copy the tensor into CPU memory. If this object is already 
+                # in CPU memory and on the correct device, then no copy
+                # is performed and the original object is returned.
+                detached_tensor = t.detach().contiguous()
+                contents = torch.utils.dlpack.to_dlpack(detached_tensor)
                 blob_name = symbol_name
                 elements_attr = DenseResourceElementsAttr.get_from_ndarray(
                     contents, blob_name, tensor_type
